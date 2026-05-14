@@ -14,11 +14,11 @@ def load_image(url, name):
     except:
         img = Image.new("RGB", (1000,650),(30,30,30))
         d = ImageDraw.Draw(img)
-        d.text((20,20),f"{name} (fallback)",fill="white")
+        d.text((20,20),f"{name} (image failed)",fill="white")
         return img
 
 # =========================================================
-# FULL MAP SET (RESTORED COMPLETE)
+# FULL MAP LIST (YOUR COMPLETE SET)
 # =========================================================
 MAPS = {
     "Oregon":{"Basement":"https://i.imgur.com/x2JhPvB.png","1F":"https://i.imgur.com/uDsdMea.png","2F":"https://i.imgur.com/dyhPgyF.png"},
@@ -38,7 +38,7 @@ MAPS = {
 }
 
 # =========================================================
-# FULL OPERATORS (RESTORED COMPLETE POOLS)
+# OPERATORS (FULL SET)
 # =========================================================
 ATTACKERS = [
 "Thermite","Ace","Hibana","Ash","Iana","Nomad","Thatcher",
@@ -53,16 +53,16 @@ DEFENDERS = [
 ]
 
 # =========================================================
-# ROLE SYSTEM
+# ROLES
 # =========================================================
 ROLE = {
-    "Thermite":"HARD_BREACH","Ace":"HARD_BREACH","Hibana":"HARD_BREACH",
-    "Ash":"ENTRY","Iana":"ENTRY","Zofia":"ENTRY",
-    "Thatcher":"SUPPORT","Capitao":"SUPPORT","Nomad":"SUPPORT",
+"Thermite":"HARD_BREACH","Ace":"HARD_BREACH","Hibana":"HARD_BREACH",
+"Ash":"ENTRY","Iana":"ENTRY","Zofia":"ENTRY",
+"Thatcher":"SUPPORT","Capitao":"SUPPORT","Nomad":"SUPPORT",
 
-    "Smoke":"ANCHOR","Mute":"ANCHOR","Mira":"ANCHOR",
-    "Jager":"UTILITY","Bandit":"UTILITY","Wamai":"UTILITY",
-    "Valkyrie":"INFO","Echo":"INFO"
+"Smoke":"ANCHOR","Mute":"ANCHOR","Mira":"ANCHOR",
+"Jager":"UTILITY","Bandit":"UTILITY","Wamai":"UTILITY",
+"Valkyrie":"INFO","Echo":"INFO"
 }
 
 def role(op):
@@ -105,22 +105,22 @@ def build_team(side, your_op, size):
 def tip(op):
     return {
         "Thermite":"Open reinforced wall for execute.",
-        "Ace":"Safe long-range breach.",
-        "Hibana":"Flexible breach holes.",
+        "Ace":"Safer long-range breach.",
+        "Hibana":"Flexible ranged breach.",
         "Ash":"Fast entry frag.",
-        "Iana":"Drone before pushing.",
+        "Iana":"Intel before push.",
         "Nomad":"Flank control.",
-        "Thatcher":"Disable gadgets.",
-        "Smoke":"Delay plant.",
-        "Mute":"Deny drones.",
+        "Thatcher":"Disable electronics.",
+        "Smoke":"Delay plant with gas.",
+        "Mute":"Drone denial.",
         "Jager":"Stop grenades.",
         "Bandit":"Electrify walls.",
-        "Mira":"Hold angles.",
-        "Valkyrie":"Camera intel."
+        "Mira":"Angle control.",
+        "Valkyrie":"Intel cameras."
     }.get(op,"Play your role")
 
 # =========================================================
-# MAP OVERLAY (ATTACK vs DEFENSE TEXT)
+# MAP DRAW (BASIC OVERLAY)
 # =========================================================
 def draw_map(img, side):
     draw = ImageDraw.Draw(img)
@@ -145,24 +145,35 @@ def draw_map(img, side):
     return img
 
 # =========================================================
-# AI CHAT (SAFE)
+# AI (FIXED OLLAMA)
 # =========================================================
 def ask_ai(prompt):
+    url = "http://127.0.0.1:11434/api/generate"
+
     try:
         r = requests.post(
-            "http://localhost:11434/api/generate",
-            json={"model":"phi3:latest","prompt":prompt,"stream":False},
-            timeout=60
+            url,
+            json={
+                "model":"phi3:latest",
+                "prompt":prompt,
+                "stream":False
+            },
+            timeout=120
         )
+
+        if r.status_code != 200:
+            return f"HTTP ERROR {r.status_code}: {r.text}"
+
         return r.json().get("response","No response")
-    except:
-        return "AI offline — start Ollama + phi3:latest"
+
+    except Exception as e:
+        return f"AI ERROR: {str(e)}"
 
 # =========================================================
 # UI
 # =========================================================
 st.set_page_config(layout="wide")
-st.title("🧠 Siege Trainer v49 (FULL RESTORED SYSTEM)")
+st.title("🧠 Siege Trainer v51 (FULL COMPLETE SYSTEM)")
 
 col1,col2 = st.columns([2,1])
 
@@ -190,10 +201,9 @@ with col1:
     st.success(f"{your_op} → {role(your_op)}")
     st.write("Tip:", tip(your_op))
 
-    st.markdown("## 👥 Team Built Around You")
+    st.markdown("## 👥 Team")
 
     team = build_team(side,your_op,size)
-
     for t in team:
         st.write(f"• {t} → {tip(t)}")
 
@@ -204,20 +214,22 @@ with col2:
     if "chat" not in st.session_state:
         st.session_state.chat = []
 
-    msg = st.text_input("Ask coach")
+    msg = st.text_input("Ask AI")
 
     if st.button("Send"):
         prompt = f"""
-Map:{map_name}
-Site:{site}
-Side:{side}
-Operator:{your_op}
-Stack:{stack}
+Map: {map_name}
+Site: {site}
+Side: {side}
+Operator: {your_op}
+Stack: {stack}
 
-Question:{msg}
-Give short tactical answer.
+Question: {msg}
+
+Give short tactical Siege advice.
 """
         res = ask_ai(prompt)
+
         st.session_state.chat.append(("You",msg))
         st.session_state.chat.append(("Coach",res))
 
