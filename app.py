@@ -150,7 +150,7 @@ def draw_map(img, side):
 def ask_ai(prompt):
     try:
         r = requests.post(
-            "http://127.0.1:11434/api/chat",
+            "http://127.0.0.1:11434/api/chat",
             json={
                 "model":"phi3:latest",
                 "messages":[
