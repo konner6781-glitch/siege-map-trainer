@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw
 from io import BytesIO
 
 # =========================================================
-# IMAGE LOADER (SAFE)
+# SAFE IMAGE LOADER
 # =========================================================
 def load_image(url, name):
     try:
@@ -12,13 +12,13 @@ def load_image(url, name):
         r.raise_for_status()
         return Image.open(BytesIO(r.content)).convert("RGB")
     except:
-        img = Image.new("RGB", (1000,650),(30,30,30))
+        img = Image.new("RGB", (1000,650),(25,25,25))
         d = ImageDraw.Draw(img)
-        d.text((20,20),f"{name} (image failed)",fill="white")
+        d.text((20,20),f"{name} image failed",fill="white")
         return img
 
 # =========================================================
-# FULL MAP LIST (YOUR COMPLETE SET)
+# FULL MAPS (ALL INCLUDED)
 # =========================================================
 MAPS = {
     "Oregon":{"Basement":"https://i.imgur.com/x2JhPvB.png","1F":"https://i.imgur.com/uDsdMea.png","2F":"https://i.imgur.com/dyhPgyF.png"},
@@ -38,7 +38,7 @@ MAPS = {
 }
 
 # =========================================================
-# OPERATORS (FULL SET)
+# OPERATORS (FULL CORE SET)
 # =========================================================
 ATTACKERS = [
 "Thermite","Ace","Hibana","Ash","Iana","Nomad","Thatcher",
@@ -106,21 +106,21 @@ def tip(op):
     return {
         "Thermite":"Open reinforced wall for execute.",
         "Ace":"Safer long-range breach.",
-        "Hibana":"Flexible ranged breach.",
+        "Hibana":"Flexible breach control.",
         "Ash":"Fast entry frag.",
         "Iana":"Intel before push.",
         "Nomad":"Flank control.",
-        "Thatcher":"Disable electronics.",
-        "Smoke":"Delay plant with gas.",
+        "Thatcher":"Disable gadgets.",
+        "Smoke":"Delay plant.",
         "Mute":"Drone denial.",
-        "Jager":"Stop grenades.",
-        "Bandit":"Electrify walls.",
+        "Jager":"Anti-grenade utility.",
+        "Bandit":"Electric wall denial.",
         "Mira":"Angle control.",
-        "Valkyrie":"Intel cameras."
+        "Valkyrie":"Camera intel."
     }.get(op,"Play your role")
 
 # =========================================================
-# MAP DRAW (BASIC OVERLAY)
+# MAP OVERLAY
 # =========================================================
 def draw_map(img, side):
     draw = ImageDraw.Draw(img)
@@ -145,17 +145,17 @@ def draw_map(img, side):
     return img
 
 # =========================================================
-# AI (FIXED OLLAMA)
+# AI (FULL FIXED OLLAMA)
 # =========================================================
 def ask_ai(prompt):
-    url = "http://127.0.0.1:11434/api/generate"
-
     try:
         r = requests.post(
-            url,
+            "http://127.0.0.1:11434/api/chat",
             json={
                 "model":"phi3:latest",
-                "prompt":prompt,
+                "messages":[
+                    {"role":"user","content":prompt}
+                ],
                 "stream":False
             },
             timeout=120
@@ -164,7 +164,7 @@ def ask_ai(prompt):
         if r.status_code != 200:
             return f"HTTP ERROR {r.status_code}: {r.text}"
 
-        return r.json().get("response","No response")
+        return r.json()["message"]["content"]
 
     except Exception as e:
         return f"AI ERROR: {str(e)}"
@@ -173,7 +173,7 @@ def ask_ai(prompt):
 # UI
 # =========================================================
 st.set_page_config(layout="wide")
-st.title("🧠 Siege Trainer v51 (FULL COMPLETE SYSTEM)")
+st.title("🧠 Siege Trainer v52 (STABLE BASE SYSTEM)")
 
 col1,col2 = st.columns([2,1])
 
@@ -218,16 +218,17 @@ with col2:
 
     if st.button("Send"):
         prompt = f"""
+You are a Rainbow Six Siege coach.
+
 Map: {map_name}
 Site: {site}
 Side: {side}
 Operator: {your_op}
 Stack: {stack}
 
-Question: {msg}
-
-Give short tactical Siege advice.
+Give short, tactical advice.
 """
+
         res = ask_ai(prompt)
 
         st.session_state.chat.append(("You",msg))
